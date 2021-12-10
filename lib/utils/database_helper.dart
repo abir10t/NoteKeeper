@@ -7,6 +7,7 @@ class DatabaseHelper
 {
  static late  DatabaseHelper _databaseHelper;// singelton DatabaseHelper
  static late Database _database; // Singelton Database
+ DatabaseHelper._createInstance();
 
  String noteTable = 'note_table';
  String colId = 'id';
@@ -16,15 +17,24 @@ class DatabaseHelper
  String colDate = 'date';
 
 
- DatabaseHelper._createInstance();
 
- factory DatabaseHelper(){
 
-    if(_databaseHelper == null){
+ factory DatabaseHelper()
+ {
+
+    if(_databaseHelper == null)
+    {
       _databaseHelper = DatabaseHelper._createInstance();
     }
     
    return _databaseHelper;
+ }
+
+ Future<Database> get database async
+ {
+   if(_database == null)
+     _database = await initializeDatabase();
+   return _database;
  }
 
  Future<Database>initializeDatabase() async
@@ -33,7 +43,9 @@ class DatabaseHelper
    Directory directory = await getApplicationDocumentsDirectory(); // path provider package
    String path = directory.path + 'notes.db';
 
-  var noteDatabase =  openDatabase( path, version: 1, onCreate: _createDb);
+   // create the database at a given path
+
+  var noteDatabase =  await openDatabase( path, version: 1, onCreate: _createDb);
   return noteDatabase;
 
  }
