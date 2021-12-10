@@ -82,5 +82,14 @@ Future<int> deleteNote(int id) async
  return result;
 }
 
+// Number of Note Objects in Database
+
+Future<int?> getCount()async{
+    Database db = await this.database;
+    List<Map<String, dynamic>> x = await db.rawQuery('SELECT COUNT (*) from $noteTable');
+    int? result = Sqflite.firstIntValue(x);
+    return result;
+}
+
 
 }
