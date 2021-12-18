@@ -41,6 +41,11 @@ class Note
     this._date = newDate;
   }
 
+  set  description( String ? newDiscription)
+  {
+    this._description = newDiscription;
+  }
+
 
   Map<String, dynamic> toMap()
   {

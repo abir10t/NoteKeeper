@@ -5,7 +5,7 @@ import 'dart:io'; // deals with file and folder
 import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
-  static late DatabaseHelper _databaseHelper; // singelton DatabaseHelper
+  static  DatabaseHelper ? _databaseHelper; // singelton DatabaseHelper
   static late Database _database; // Singelton Database
   DatabaseHelper._createInstance();
 
@@ -16,10 +16,12 @@ class DatabaseHelper {
   String colPriority = 'priority';
   String colDate = 'date';
 
-  factory DatabaseHelper()
+  factory  DatabaseHelper()
   {
-    if (_databaseHelper == null) {_databaseHelper = DatabaseHelper._createInstance();}
-    return _databaseHelper;
+    if (_databaseHelper == null) {_databaseHelper = DatabaseHelper._createInstance();
+    }
+
+    return _databaseHelper!;
   }
 
   Future<Database> get database async
@@ -28,7 +30,8 @@ class DatabaseHelper {
     return _database;
   }
 
-  Future<Database> initializeDatabase() async {
+  Future<Database> initializeDatabase() async
+  {
     //get the directory path for android and ios;
     Directory directory = await getApplicationDocumentsDirectory(); // path provider package
     String path = directory.path + 'notes.db';
@@ -89,6 +92,22 @@ Future<int?> getCount()async{
     List<Map<String, dynamic>> x = await db.rawQuery('SELECT COUNT (*) from $noteTable');
     int? result = Sqflite.firstIntValue(x);
     return result;
+}
+
+Future<List<Note>> getNoteList() async
+{
+
+var noteMapList = await getNoteMapList();
+int count = noteMapList.length;
+
+List<Note> noteList = <Note>[];
+
+for(int i=0; i<count; i++)
+{
+  noteList.add(Note.fromMapObject(noteMapList[i]));
+}
+
+return noteList;
 }
 
 

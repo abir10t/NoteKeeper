@@ -1,30 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:note_keeper/models/note.dart';
+import 'package:note_keeper/utils/database_helper.dart';
 
-class NoteDetail extends StatefulWidget {
-  String appBarTitle;
+class NoteDetail extends StatefulWidget
+{
+  final String  appBarTitle;
+  final Note  note;
 
-  NoteDetail(this.appBarTitle);
+  NoteDetail(this.note,this.appBarTitle);
 
 
   @override
-  State<StatefulWidget>createState(){
-    return NoteDetailState(this.appBarTitle);
+  State<StatefulWidget>createState()
+  {
+    return NoteDetailState(this.note,this.appBarTitle);
   }
 }
 
-class NoteDetailState extends State<NoteDetail> {
+class NoteDetailState extends State<NoteDetail>
+{
   static var _priorities = ['Hight', 'Low'];
+  DatabaseHelper helper = DatabaseHelper();
 
   String ? appBarTitle;
+  Note note;
 
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
+  final TextEditingController  titleController = TextEditingController();
+ final TextEditingController  descriptionController = TextEditingController();
 
-  NoteDetailState(this.appBarTitle);
+  NoteDetailState(this.note,this.appBarTitle);
 
 
   @override
   Widget build(BuildContext context) {
+
+     titleController.text = note.title;
+     descriptionController.text = note.description!;
+
+
     return WillPopScope(
       onWillPop: (){
         return movedToLastScreen();
@@ -48,10 +62,11 @@ class NoteDetailState extends State<NoteDetail> {
                         child: Text(dropDownStringItem),
                       );
                     }).toList(),
-                    value: 'Low',
+                    value: getPriorityAsString(note.priority),
                     onChanged: (valueSelectedByUser) {
                       setState(() {
                         debugPrint('User selected $valueSelectedByUser');
+                        updatePriorityAsInt(valueSelectedByUser.toString());
                       });
                     }),
               ),
@@ -61,6 +76,7 @@ class NoteDetailState extends State<NoteDetail> {
                   controller: titleController,
                   onChanged: (value) {
                     debugPrint('Something changed in Title Text Field');
+                    updateTitle();
                   },
                   decoration: InputDecoration(
                       labelText: 'Title',
@@ -74,7 +90,8 @@ class NoteDetailState extends State<NoteDetail> {
                 child: TextField(
                   controller: descriptionController,
                   onChanged: (value) {
-                    debugPrint('Something changed in Title Text Field');
+                    debugPrint('Something changed in Description Text Field');
+                    updateDescription();
                   },
                   decoration: InputDecoration(
                       labelText: 'Description',
@@ -92,7 +109,9 @@ class NoteDetailState extends State<NoteDetail> {
                         style: TextButton.styleFrom(
                             backgroundColor: Colors.deepPurple),
                         child: Text('Save',style: TextStyle(color: Colors.white),),
-                        onPressed: () {},
+                        onPressed: () {
+                          _save();
+                        },
                       ),
                     ),
                     Container(width: 5.0,),
@@ -101,7 +120,13 @@ class NoteDetailState extends State<NoteDetail> {
                         style: TextButton.styleFrom(
                             backgroundColor: Colors.deepPurple),
                         child: Text('Delete',style: TextStyle(color: Colors.white),),
-                        onPressed: () {},
+                        onPressed: ()
+                        {
+                         setState(() {
+                           debugPrint("Delete button Clicked");
+                           _delete();
+                         });
+                        },
                       ),
                     )
                   ],
@@ -115,6 +140,94 @@ class NoteDetailState extends State<NoteDetail> {
   }
   movedToLastScreen()
   {
-     Navigator.pop(context);
+     Navigator.pop(context, true);
   }
+
+  void updatePriorityAsInt(String value)
+  {
+    switch(value)
+    {
+      case 'High':
+        note.priority = 1;
+        break;
+      case 'Low':
+        note.priority = 2;
+        break;
+    }
+
+  }
+
+  String? getPriorityAsString(int value)
+  {
+    String ? priority;
+    switch(value)
+    {
+      case 1 :
+        priority = _priorities[0]; // 'High'
+        break;
+
+      case 2 :
+        priority = _priorities[1]; // 'Low'
+        break;
+    }
+    return priority;
+  }
+
+  void updateTitle()
+  {
+     note.title = titleController!.text;
+  }
+
+  void updateDescription()
+  {
+     note.description = descriptionController!.text;
+  }
+  void _save() async
+  {
+
+    movedToLastScreen();
+
+    note.date = DateFormat.yMMMd().format(DateTime.now());
+    int result;
+    if(note.id != null) {result =  await helper.updateNote(note);}
+    else {result = await helper.insertNote(note);}
+
+    if(result !=0 ) {_showAlertDialog('status', 'Note Saves Successfully');}
+
+    else {_showAlertDialog('status', 'problem saving note');}
+  }
+
+  void _showAlertDialog(String title, String message)
+  {
+    AlertDialog alterDialog = AlertDialog
+      (
+      title: Text(title),
+      content: Text(message),
+    );
+
+    showDialog(context: context, builder: (_) => alterDialog);
+  }
+
+
+  void _delete() async
+  {
+    movedToLastScreen();
+
+    if(note.id == null)
+    {
+      _showAlertDialog('status', 'No Note was deleted');
+      return;
+    }
+    
+   int result =  await helper.deleteNote(note.id);
+
+    if( result!=0 )
+      _showAlertDialog('Status', 'Note Deleted Successfully');
+    else
+      _showAlertDialog('Status', 'Error Occured while Deleting Note');
+
+  }
+
+
 }
+
